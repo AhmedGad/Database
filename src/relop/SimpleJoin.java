@@ -11,7 +11,6 @@ public class SimpleJoin extends Iterator {
 	Iterator left, right;
 	Predicate[] preds;
 	Tuple next;
-	Schema mergedSchema;
 
 	/**
 	 * Constructs a join, given the left and right iterators and join predicates
@@ -22,7 +21,7 @@ public class SimpleJoin extends Iterator {
 		this.right = right;
 		this.left = left;
 		this.preds = preds;
-		mergedSchema = Schema.join(left.getSchema(), right.getSchema());
+		setSchema(Schema.join(left.getSchema(), right.getSchema()));
 		calcNext();
 	}
 
@@ -96,7 +95,7 @@ public class SimpleJoin extends Iterator {
 			{
 				// merge right and left tuples
 				candidate = Tuple.join(leftTuple, right.getNext(),
-						mergedSchema);
+						getSchema());
 				boolean valid = true;
 				// check this candidate with each merge condition (Predicate)
 				for (Predicate pred : preds) 
