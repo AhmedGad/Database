@@ -4,3 +4,13 @@
 *.jar
 *.war
 *.ear
+
+# Java class files
+*.class
+
+# generated files
+bin/
+
+# Eclipse project files
+.classpath
+.project
