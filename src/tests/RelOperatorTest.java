@@ -1,7 +1,7 @@
 package tests;
 
 
-import externalSort.HashJoin;
+//import externalSort.HashJoin;
 import global.AttrOperator;
 import global.AttrType;
 import global.RID;
@@ -258,12 +258,12 @@ class RelOperatorTest extends TestDriver {
 
       // test hash join operator
       saveCounts(null);
-      HashJoin join = new HashJoin(new FileScan(s_drivers, drivers),
-          new FileScan(s_rides, rides), 0, 0);
-      join.execute();
+//      HashJoin join = new HashJoin(new FileScan(s_drivers, drivers),
+//          new FileScan(s_rides, rides), 0, 0);
+//      join.execute();
 
       // destroy temp files before doing final counts
-      join = null;
+//      join = null;
       rides = null;
       drivers = null;
       System.gc();
@@ -340,16 +340,16 @@ class RelOperatorTest extends TestDriver {
 
       // hash join of hash join; selection for output's sake
       saveCounts(null);
-      HashJoin join1 = new HashJoin(new FileScan(s_groups, groups), new FileScan(s_rides, rides), 0, 1);
-      HashJoin join2 = new HashJoin(join1, new FileScan(s_drivers, drivers), 2, 0);
-      Selection sel = new Selection(join2, new Predicate(AttrOperator.LT,
-          AttrType.FIELDNO, 10, AttrType.FIELDNO, 0));
-      sel.execute();
+//      HashJoin join1 = new HashJoin(new FileScan(s_groups, groups), new FileScan(s_rides, rides), 0, 1);
+//      HashJoin join2 = new HashJoin(join1, new FileScan(s_drivers, drivers), 2, 0);
+//      Selection sel = new Selection(join2, new Predicate(AttrOperator.LT,
+//          AttrType.FIELDNO, 10, AttrType.FIELDNO, 0));
+//      sel.execute();
 
       // destroy temp files before doing final counts
-      sel = null;
-      join2 = null;
-      join1 = null;
+//      sel = null;
+//      join2 = null;
+//      join1 = null;
       groups = null;
       rides = null;
 //      ixdrivers = null;

@@ -22,7 +22,7 @@ public class KeyScan extends Iterator {
 	 * Constructs an index scan, given the hash index and schema.
 	 */
 	public KeyScan(Schema schema, HashIndex index, SearchKey key, HeapFile file) {
-		this.schema = schema;
+		setSchema(schema);
 		this.index = index;
 		this.key = key;
 		scan = index.openScan(key);

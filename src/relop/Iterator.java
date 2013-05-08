@@ -64,7 +64,7 @@ public abstract class Iterator {
    */
   public int execute() {
     int cnt = 0;
-    getSchema().print();
+		getSchema().print();
     while (hasNext()) {
       getNext().print();
       cnt++;

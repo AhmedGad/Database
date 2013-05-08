@@ -9,17 +9,18 @@ public class Projection extends Iterator {
 	/**
 	 * Constructs a projection, given the underlying iterator and field numbers.
 	 */
-	private Schema schema;
 	private boolean isOpen;
 	private Iterator itr;
 
 	public Projection(Iterator iter, Integer... fields) {
 		Schema oldSchema = iter.getSchema();
-		schema = new Schema(fields.length);
+		Schema schema = new Schema(fields.length);
 		for (int i = 0; i < fields.length; i++) {
 			int k = fields[i];
-			schema.initField(i, oldSchema.fieldType(k), oldSchema.fieldLength(k), oldSchema.fieldName(k));
+			schema.initField(i, oldSchema.fieldType(k),
+					oldSchema.fieldLength(k), oldSchema.fieldName(k));
 		}
+		setSchema(schema);
 		itr = iter;
 		isOpen = true;
 	}
@@ -71,7 +72,7 @@ public class Projection extends Iterator {
 	 */
 	public Tuple getNext() {
 		byte[] data = itr.getNext().getData();
-		Tuple tup = new Tuple(schema, data);
+		Tuple tup = new Tuple(getSchema(), data);
 		return tup;
 	}
 

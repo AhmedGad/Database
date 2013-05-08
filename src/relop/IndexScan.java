@@ -19,9 +19,9 @@ public class IndexScan extends Iterator {
 	 */
 	public IndexScan(Schema schema, HashIndex index, HeapFile file)
 	{
+		setSchema(schema);
 		this.file = file;
 		this.index = index;
-		setSchema(schema);
 		bucketScan = index.openScan();
 	}
 
