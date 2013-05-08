@@ -10,10 +10,9 @@ import index.HashIndex;
  */
 public class IndexScan extends Iterator {
 	
-	HeapFile file;
-	HashIndex index;
-	Schema schema;
-	BucketScan bucketScan;
+	private HeapFile file;
+	private HashIndex index;
+	private BucketScan bucketScan;
 
 	/**
 	 * Constructs an index scan, given the hash index and schema.
@@ -22,7 +21,7 @@ public class IndexScan extends Iterator {
 	{
 		this.file = file;
 		this.index = index;
-		this.schema = schema;
+		setSchema(schema);
 		bucketScan = index.openScan();
 	}
 
@@ -60,7 +59,6 @@ public class IndexScan extends Iterator {
 		bucketScan.close();
 		file = null;
 		index = null;
-		schema = null;
 	}
 
 	/**
@@ -81,7 +79,7 @@ public class IndexScan extends Iterator {
 	{
 		if(bucketScan.hasNext())
 		{
-			return new Tuple(schema, file.selectRecord(bucketScan.getNext()));
+			return new Tuple(getSchema(), file.selectRecord(bucketScan.getNext()));
 		}else
 			throw new IllegalStateException("No more tuples");
 	}
