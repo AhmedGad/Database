@@ -91,10 +91,11 @@ public class SimpleJoin extends Iterator {
 		Tuple candidate = null;
 		while (left.hasNext())
 		{
-			if (right.hasNext())
+			Tuple leftTuple = left.getNext();
+			while(right.hasNext())
 			{
 				// merge right and left tuples
-				candidate = Tuple.join(left.getNext(), right.getNext(),
+				candidate = Tuple.join(leftTuple, right.getNext(),
 						mergedSchema);
 				boolean valid = true;
 				// check this candidate with each merge condition (Predicate)
@@ -109,8 +110,8 @@ public class SimpleJoin extends Iterator {
 					candidate = null; // invalid candidate
 				else
 					break; // valid candidate
-			} else
-				break; // no more tuples in the right iterator so will break
+			}
+			right.restart();
 		}
 		next = candidate;
 	}
