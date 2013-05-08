@@ -11,7 +11,6 @@ import heap.HeapScan;
 public class FileScan extends Iterator {
 	private HeapScan scanner;
 	private HeapFile file;
-	private Schema schema;
 	private boolean open;
 	private RID last;
 
@@ -20,7 +19,7 @@ public class FileScan extends Iterator {
 	 */
 	public FileScan(Schema schema, HeapFile file) {
 		this.file = file;
-		this.schema = schema;
+		setSchema(schema);
 		scanner = file.openScan();
 		open = true;
 		last = new RID();
@@ -31,9 +30,7 @@ public class FileScan extends Iterator {
 	 * child iterators, and increases the indent depth along the way.
 	 */
 	public void explain(int depth) {
-		System.out.println("FileScanIterator " + depth
-				+ " Last Record scanned (" + last.pageno + " " + last.slotno
-				+ ")");
+		System.out.println("FileScanIterator " + depth + " " + file.toString());
 	}
 
 	/**
@@ -79,7 +76,7 @@ public class FileScan extends Iterator {
 		if (!hasNext())
 			throw new IllegalStateException(
 					"scan not open or no more tuples left");
-		return new Tuple(schema, scanner.getNext(last));
+		return new Tuple(getSchema(), scanner.getNext(last));
 	}
 
 	/**
