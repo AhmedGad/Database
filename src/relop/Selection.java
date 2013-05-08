@@ -14,8 +14,8 @@ public class Selection extends Iterator {
 	 * Constructs a selection, given the underlying iterator and predicates.
 	 */
 	public Selection(Iterator iter, Predicate... preds) {
-		setSchema(iterator.getSchema());
 		iterator = iter;
+		setSchema(iterator.getSchema());
 		predicates = preds;
 	}
 

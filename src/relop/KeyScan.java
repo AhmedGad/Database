@@ -76,7 +76,7 @@ public class KeyScan extends Iterator {
 	 */
 	public Tuple getNext() {
 		RID rid = scan.getNext();
-		Tuple ret = new Tuple(schema, file.selectRecord(rid));
+		Tuple ret = new Tuple(getSchema(), file.selectRecord(rid));
 		return ret;
 	}
 
