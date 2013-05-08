@@ -31,9 +31,7 @@ public class FileScan extends Iterator {
 	 * child iterators, and increases the indent depth along the way.
 	 */
 	public void explain(int depth) {
-		System.out.println("FileScanIterator " + depth
-				+ " Last Record scanned (" + last.pageno + " " + last.slotno
-				+ ")");
+		System.out.println("FileScanIterator " + depth + " " + file.toString());
 	}
 
 	/**
