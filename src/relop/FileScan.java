@@ -2,18 +2,28 @@ package relop;
 
 import global.RID;
 import heap.HeapFile;
+import heap.HeapScan;
 
 /**
  * Wrapper for heap file scan, the most basic access method. This "iterator"
  * version takes schema into consideration and generates real tuples.
  */
 public class FileScan extends Iterator {
+	private HeapScan scanner;
+	private HeapFile file;
+	private Schema schema;
+	private boolean open;
+	private RID last;
 
 	/**
 	 * Constructs a file scan, given the schema and heap file.
 	 */
 	public FileScan(Schema schema, HeapFile file) {
-		throw new UnsupportedOperationException("Not implemented");
+		this.file = file;
+		this.schema = schema;
+		scanner = file.openScan();
+		open = true;
+		last = new RID();
 	}
 
 	/**
@@ -21,35 +31,42 @@ public class FileScan extends Iterator {
 	 * child iterators, and increases the indent depth along the way.
 	 */
 	public void explain(int depth) {
-		throw new UnsupportedOperationException("Not implemented");
+		System.out.println("FileScanIterator " + depth
+				+ " Last Record scanned (" + last.pageno + " " + last.slotno
+				+ ")");
 	}
 
 	/**
 	 * Restarts the iterator, i.e. as if it were just constructed.
 	 */
 	public void restart() {
-		throw new UnsupportedOperationException("Not implemented");
+		close();
+		scanner = file.openScan();
+		open = true;
 	}
 
 	/**
 	 * Returns true if the iterator is open; false otherwise.
 	 */
 	public boolean isOpen() {
-		throw new UnsupportedOperationException("Not implemented");
+		return open;
 	}
 
 	/**
 	 * Closes the iterator, releasing any resources (i.e. pinned pages).
 	 */
 	public void close() {
-		throw new UnsupportedOperationException("Not implemented");
+		if (isOpen()) {
+			scanner.close();
+			open = false;
+		}
 	}
 
 	/**
 	 * Returns true if there are more tuples, false otherwise.
 	 */
 	public boolean hasNext() {
-		throw new UnsupportedOperationException("Not implemented");
+		return open && scanner.hasNext();
 	}
 
 	/**
@@ -59,14 +76,17 @@ public class FileScan extends Iterator {
 	 *             if no more tuples
 	 */
 	public Tuple getNext() {
-		throw new UnsupportedOperationException("Not implemented");
+		if (!hasNext())
+			throw new IllegalStateException(
+					"scan not open or no more tuples left");
+		return new Tuple(schema, scanner.getNext(last));
 	}
 
 	/**
 	 * Gets the RID of the last tuple returned.
 	 */
-	public RID getLastRID() {
-		throw new UnsupportedOperationException("Not implemented");
+	public RID getLastRID() {// may cause problems
+		return new RID(last);
 	}
 
 } // public class FileScan extends Iterator
