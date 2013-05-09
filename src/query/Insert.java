@@ -16,7 +16,7 @@ class Insert implements Plan {
 
 	String fileName;
 	Object[] values;
-
+	Schema schema;
 	/**
 	 * Optimizes the plan, given the parsed query.
 	 * 
@@ -27,6 +27,9 @@ class Insert implements Plan {
 	{
 		fileName = tree.getFileName();
 		values = tree.getValues();
+		schema = Minibase.SystemCatalog.getSchema(fileName);
+		QueryCheck.tableExists(fileName);
+		QueryCheck.insertValues(schema, values);
 	} // public Insert(AST_Insert tree) throws QueryException
 
 	/**
@@ -36,7 +39,6 @@ class Insert implements Plan {
 	{
 		// insert values into table
 		HeapFile f = new HeapFile(fileName);
-		Schema schema = Minibase.SystemCatalog.getSchema(fileName);
 		Tuple tuple = new Tuple(schema, values);
 		RID rid = f.insertRecord(tuple.getData());
 
