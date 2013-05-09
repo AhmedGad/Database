@@ -11,8 +11,10 @@ public class Projection extends Iterator {
 	 */
 	private boolean isOpen;
 	private Iterator itr;
+	private Integer[] fields;
 
 	public Projection(Iterator iter, Integer... fields) {
+		this.fields = fields;
 		Schema oldSchema = iter.getSchema();
 		Schema schema = new Schema(fields.length);
 		for (int i = 0; i < fields.length; i++) {
@@ -71,8 +73,10 @@ public class Projection extends Iterator {
 	 *             if no more tuples
 	 */
 	public Tuple getNext() {
-		byte[] data = itr.getNext().getData();
-		Tuple tup = new Tuple(getSchema(), data);
+		Tuple oldTup = itr.getNext();
+		Tuple tup = new Tuple(getSchema());
+		for(int i = 0; i < fields.length; i++)
+			tup.setField(i, oldTup.getField(fields[i]));
 		return tup;
 	}
 
