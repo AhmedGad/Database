@@ -10,7 +10,7 @@ public class SimpleJoin extends Iterator {
 
 	Iterator left, right;
 	Predicate[] preds;
-	Tuple next;
+	Tuple next , currLeft;
 
 	/**
 	 * Constructs a join, given the left and right iterators and join predicates
@@ -88,13 +88,25 @@ public class SimpleJoin extends Iterator {
 	private void calcNext()
 	{
 		Tuple candidate = null;
-		while (left.hasNext() && candidate== null)
+		if(currLeft == null && left.hasNext())
+			currLeft = left.getNext();
+		while (currLeft != null && candidate== null)
 		{
-			Tuple leftTuple = left.getNext();
+			if(!right.hasNext()) // restart iterator if we reached the end
+			{
+				if(left.hasNext())
+					currLeft = left.getNext();
+				else
+				{
+					currLeft = null;
+					break;
+				}
+				right.restart();
+			}
 			while(right.hasNext())
 			{
 				// merge right and left tuples
-				candidate = Tuple.join(leftTuple, right.getNext(),
+				candidate = Tuple.join(currLeft, right.getNext(),
 						getSchema());
 				boolean valid = true;
 				// check this candidate with each merge condition (Predicate)
@@ -108,9 +120,12 @@ public class SimpleJoin extends Iterator {
 				if (!valid)
 					candidate = null; // invalid candidate
 				else
-					break; // valid candidate
+					{
+						// valid candidate
+						next = candidate;
+						return;
+					} 
 			}
-			right.restart();
 		}
 		next = candidate;
 	}
