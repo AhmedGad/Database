@@ -88,7 +88,7 @@ public class SimpleJoin extends Iterator {
 	private void calcNext()
 	{
 		Tuple candidate = null;
-		while (left.hasNext())
+		while (left.hasNext() && candidate== null)
 		{
 			Tuple leftTuple = left.getNext();
 			while(right.hasNext())
