@@ -43,6 +43,8 @@ public class SimpleJoin extends Iterator {
 	{
 		left.restart();
 		right.restart();
+		currLeft = null;
+		calcNext();
 	}
 
 	/**
