@@ -7,7 +7,7 @@ package relop;
  */
 public class Selection extends Iterator {
 	Iterator iterator;
-	Predicate[] predicates;
+	Predicate[][] CNF;
 	Tuple temp;
 
 	/**
@@ -16,11 +16,15 @@ public class Selection extends Iterator {
 	public Selection(Iterator iter, Predicate... preds) {
 		iterator = iter;
 		setSchema(iterator.getSchema());
-		predicates = preds;
+		CNF = new Predicate[preds.length][1];
+		for (int i = 0; i < preds.length; i++)
+			CNF[i][0] = preds[i];
 	}
 
 	public Selection(Iterator iter, Predicate[][] CNF_Pred) {
-		// TODO
+		iterator = iter;
+		setSchema(iterator.getSchema());
+		CNF = CNF_Pred;
 	}
 
 	/**
@@ -60,10 +64,15 @@ public class Selection extends Iterator {
 		if (temp == null) {
 			while (iterator.hasNext()) {
 				Tuple t = iterator.getNext();
-				boolean satisfy = true;// wether or not the tuple satisfies the
+				boolean satisfy = false;// wether or not the tuple satisfies the
 										// given predicates
-				for (int i = 0; i < predicates.length && satisfy; i++)
-					satisfy = satisfy && predicates[i].evaluate(t);
+				for (int i = 0; i < CNF.length; i++) {
+					for (int j = 0; j < CNF[i].length && satisfy; j++)
+						satisfy = satisfy || CNF[i][j].evaluate(t);
+
+					if (!satisfy)
+						break;
+				}
 				if (satisfy) {
 					temp = t;
 					break;
