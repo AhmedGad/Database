@@ -19,6 +19,10 @@ public class Selection extends Iterator {
 		predicates = preds;
 	}
 
+	public Selection(Iterator iter, Predicate[][] CNF_Pred) {
+		// TODO
+	}
+
 	/**
 	 * Gives a one-line explaination of the iterator, repeats the call on any
 	 * child iterators, and increases the indent depth along the way.

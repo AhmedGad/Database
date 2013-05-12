@@ -4,17 +4,14 @@ import global.Minibase;
 import global.SortKey;
 import heap.HeapFile;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.ArrayList;
 
 import parser.AST_Select;
 import relop.FileScan;
 import relop.Iterator;
 import relop.Predicate;
-import relop.Projection;
 import relop.Schema;
 import relop.Selection;
-import relop.SimpleJoin;
 import relop.Tuple;
 
 /**
@@ -38,6 +35,15 @@ class Select implements Plan {
 		orders = tree.getOrders();
 		preds = tree.getPredicates();
 		tables = tree.getTables();
+		tablesIters = new Iterator[tables.length];
+
+		// initialize iterators
+		for (int i = 0; i < tablesIters.length; i++) {
+			tablesIters[i] = new FileScan(
+					Minibase.SystemCatalog.getSchema(tables[i]), new HeapFile(
+							tables[i]));
+		}
+
 	} // public Select(AST_Select tree) throws QueryException
 
 	public void push() {
@@ -60,54 +66,114 @@ class Select implements Plan {
 	 * Executes the plan and prints applicable output.
 	 */
 	public void execute() {
-		// FileScan[] scans = new FileScan[tables.length];
-
-		// opening tables scans
-		Queue<Iterator> queue = new LinkedList<Iterator>();
-		for (int i = 0; i < tables.length; i++) {
-			Schema schema = Minibase.SystemCatalog.getSchema(tables[i]);
-			HeapFile file = new HeapFile(tables[i]);
-			queue.add(new FileScan(schema, file));
+		@SuppressWarnings("unchecked")
+		ArrayList<Predicate>[][] CNF_s = new ArrayList[tables.length][preds.length];
+		for (int t = 0; t < tables.length; t++) {
+			for (int i = 0; i < preds.length; i++)
+				CNF_s[t][i] = new ArrayList<Predicate>();
 		}
-		// join all tables (super join)
-		while (queue.size() > 1) {
-			Iterator left = queue.poll();
-			Iterator right = queue.poll();
-			queue.add(new SimpleJoin(left, right, new Predicate[0]));
-		}
-		Iterator selected = queue.poll();
 
-		// select from tables
 		for (int i = 0; i < preds.length; i++) {
-			Iterator[] ors = new Iterator[preds[i].length];
-			for (int j = 0; j < preds[i].length; j++) {
-				ors[j] = new Selection(selected, preds[i][j]);
-				// System.out.println(preds[i][j].toString());
+			boolean ok = true;
+			// pass1: check if all predicates in this term depends on only one
+			// table
+			int preds_tables[] = new int[preds[i].length];
+			label: for (int j = 0; j < preds[i].length; j++) {
+				for (int t = 0; t < tables.length; t++) {
+					if (preds[i][j].validate(global.Minibase.SystemCatalog
+							.getSchema(tables[t]))) {
+						preds_tables[j] = t;
+						break;
+					}
+					if (t == tables.length - 1) {
+						ok = false;
+						break label;
+					}
+				}
 			}
-			// System.out.println("----------------");
-			selected = new Union(ors, i);
+
+			if (ok) {
+				// pass2: put each predicate in it's place in CNF_s list
+				for (int j = 0; j < preds[i].length; j++) {
+					CNF_s[preds_tables[j]][i].add(preds[i][j]);
+				}
+			}
 		}
-		// projection
 
-		// get columns indexes in selected table
-		Schema selectedSchema = selected.getSchema();
-		Integer[] fields = new Integer[cols.length];
-		for (int i = 0; i < cols.length; i++)
-			fields[i] = selectedSchema.fieldNumber(cols[i]);
+		for (int t = 0; t < tables.length; t++) {
+			int len = 0;
+			for (int i = 0; i < preds.length; i++)
+				if (CNF_s[t][i].size() > 0)
+					len++;
 
-		Projection output = new Projection(selected, fields);
-		int count = 0;
-		while (output.hasNext()) {
-			output.getNext().print();
-			count++;
+			Predicate[][] cur_pred = new Predicate[len][];
+			int cnt = 0;
+			for (int i = 0; i < preds.length; i++)
+				if (CNF_s[t][i].size() > 0) {
+					cur_pred[cnt] = new Predicate[CNF_s[t][i].size()];
+
+					for (int j = 0; j < cur_pred[cnt].length; j++)
+						cur_pred[cnt][j] = CNF_s[t][i].get(j);
+
+					cnt++;
+				}
+			tablesIters[t] = new Selection(tablesIters[t], cur_pred);
 		}
-		// output.explain(0);
-		output.close();
-
-		// print the output message
-		System.out.println(count + " rows affected.");
 
 	} // public void execute()
+
+	// /**
+	// * Executes the plan and prints applicable output.
+	// */
+	// public void execute() {
+	// // FileScan[] scans = new FileScan[tables.length];
+	//
+	// // opening tables scans
+	// Queue<Iterator> queue = new LinkedList<Iterator>();
+	// for (int i = 0; i < tables.length; i++) {
+	// Schema schema = Minibase.SystemCatalog.getSchema(tables[i]);
+	// HeapFile file = new HeapFile(tables[i]);
+	// queue.add(new FileScan(schema, file));
+	// }
+	// // join all tables (super join)
+	// while (queue.size() > 1) {
+	// Iterator left = queue.poll();
+	// Iterator right = queue.poll();
+	// queue.add(new SimpleJoin(left, right, new Predicate[0]));
+	// }
+	// Iterator selected = queue.poll();
+	//
+	// // select from tables
+	// for (int i = 0; i < preds.length; i++) {
+	// Iterator[] ors = new Iterator[preds[i].length];
+	// for (int j = 0; j < preds[i].length; j++) {
+	// ors[j] = new Selection(selected, preds[i][j]);
+	// // System.out.println(preds[i][j].toString());
+	// }
+	// // System.out.println("----------------");
+	// selected = new Union(ors, i);
+	// }
+	// // projection
+	//
+	// // get columns indexes in selected table
+	// Schema selectedSchema = selected.getSchema();
+	// Integer[] fields = new Integer[cols.length];
+	// for (int i = 0; i < cols.length; i++)
+	// fields[i] = selectedSchema.fieldNumber(cols[i]);
+	//
+	// Projection output = new Projection(selected, fields);
+	// int count = 0;
+	// while (output.hasNext()) {
+	// output.getNext().print();
+	// count++;
+	// }
+	// // output.explain(0);
+	// output.close();
+	//
+	// // print the output message
+	// System.out.println(count + " rows affected.");
+	//
+	// } // public void execute()
 
 	class Union extends Iterator {
 		Iterator[] itrs;
