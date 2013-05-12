@@ -68,11 +68,12 @@ public class Selection extends Iterator {
 				boolean satisfy;
 				for (int i = 0; i < CNF.length; i++) {
 					satisfy = false;
-					for (int j = 0; j < CNF[i].length && satisfy; j++)
+					for (int j = 0; j < CNF[i].length; j++) 
 						satisfy = satisfy || CNF[i][j].evaluate(t);
 					all_good = all_good && satisfy;
 				}
 				if (all_good) {
+
 					temp = t;
 					break;
 				}
