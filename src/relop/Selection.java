@@ -64,16 +64,15 @@ public class Selection extends Iterator {
 		if (temp == null) {
 			while (iterator.hasNext()) {
 				Tuple t = iterator.getNext();
-				boolean satisfy = false;// wether or not the tuple satisfies the
-										// given predicates
+				boolean all_good = true;
+				boolean satisfy;
 				for (int i = 0; i < CNF.length; i++) {
+					satisfy = false;
 					for (int j = 0; j < CNF[i].length && satisfy; j++)
 						satisfy = satisfy || CNF[i][j].evaluate(t);
-
-					if (!satisfy)
-						break;
+					all_good = all_good && satisfy;
 				}
-				if (satisfy) {
+				if (all_good) {
 					temp = t;
 					break;
 				}
