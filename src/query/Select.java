@@ -67,58 +67,35 @@ class Select implements Plan {
 	 */
 	public void execute() {
 		@SuppressWarnings("unchecked")
-		ArrayList<Predicate>[][] CNF_s = new ArrayList[tables.length][preds.length];
+		ArrayList<Predicate[]>[] CNF_s = new ArrayList[tables.length];
+
 		for (int t = 0; t < tables.length; t++) {
-			for (int i = 0; i < preds.length; i++)
-				CNF_s[t][i] = new ArrayList<Predicate>();
-		}
+			CNF_s[t] = new ArrayList<Predicate[]>();
 
-		for (int i = 0; i < preds.length; i++) {
-			boolean ok = true;
-			// pass1: check if all predicates in this term depends on only one
-			// table
-			int preds_tables[] = new int[preds[i].length];
-			label: for (int j = 0; j < preds[i].length; j++) {
-				for (int t = 0; t < tables.length; t++) {
-					if (preds[i][j].validate(global.Minibase.SystemCatalog
-							.getSchema(tables[t]))) {
-						preds_tables[j] = t;
-						break;
-					}
-					if (t == tables.length - 1) {
-						ok = false;
-						break label;
-					}
-				}
-			}
-
-			if (ok) {
-				// pass2: put each predicate in it's place in CNF_s list
+			for (int i = 0; i < preds.length; i++) {
+				boolean ok = true;
 				for (int j = 0; j < preds[i].length; j++) {
-					CNF_s[preds_tables[j]][i].add(preds[i][j]);
+					ok &= preds[i][j].validate(global.Minibase.SystemCatalog
+							.getSchema(tables[t]));
+					if (!ok)
+						break;
 				}
+				if (ok)
+					CNF_s[t].add(preds[i]);
 			}
+
 		}
 
-		for (int t = 0; t < tables.length; t++) {
-			int len = 0;
-			for (int i = 0; i < preds.length; i++)
-				if (CNF_s[t][i].size() > 0)
-					len++;
+		for (int t = 0; t < tables.length; t++)
+			if (CNF_s[t].size() > 0) {
 
-			Predicate[][] cur_pred = new Predicate[len][];
-			int cnt = 0;
-			for (int i = 0; i < preds.length; i++)
-				if (CNF_s[t][i].size() > 0) {
-					cur_pred[cnt] = new Predicate[CNF_s[t][i].size()];
+				Predicate[][] cur_pred = new Predicate[CNF_s[t].size()][];
 
-					for (int j = 0; j < cur_pred[cnt].length; j++)
-						cur_pred[cnt][j] = CNF_s[t][i].get(j);
+				for (int i = 0; i < cur_pred.length; i++)
+					cur_pred[i] = CNF_s[t].get(i);
 
-					cnt++;
-				}
-			tablesIters[t] = new Selection(tablesIters[t], cur_pred);
-		}
+				tablesIters[t] = new Selection(tablesIters[t], cur_pred);
+			}
 
 	} // public void execute()
 
