@@ -38,15 +38,33 @@ class Select implements Plan {
 		orders = tree.getOrders();
 		preds = tree.getPredicates();
 		tables = tree.getTables();
+		for (int i = 0; i < tables.length; i++)
+			QueryCheck.tableExists(tables[i]);
 		tablesIters = new Iterator[tables.length];
 		visited = new boolean[preds.length];
 		// initialize iterators
+		Schema all = new Schema(0);
+		for (int i = 0; i < tablesIters.length; i++) {
+			all = Schema.join(all, Minibase.SystemCatalog.getSchema(tables[i]));
+
+		}
+		// check all columns exist on given tables
+		for (int i = 0; i < cols.length; i++)
+			if (all.fieldNumber(cols[i]) < 0)
+				throw new QueryException("Column " + cols[i]
+						+ " Does not exist in the given tables!");
+		// check if we don't have any extra predicates i.e (... or true)
+		for (Predicate[] a : preds)
+			for (Predicate p : a)
+				if (!p.validate(all))
+					throw new QueryException(
+							"Some predicates does not belong to involved tables!!");
+		
 		for (int i = 0; i < tablesIters.length; i++) {
 			tablesIters[i] = new FileScan(
 					Minibase.SystemCatalog.getSchema(tables[i]), new HeapFile(
 							tables[i]));
 		}
-
 	} // public Select(AST_Select tree) throws QueryException
 
 	/**
@@ -121,6 +139,7 @@ class Select implements Plan {
 			currentT = new Projection(currentT, fields);
 		}
 		currentT.execute();// print out the result;
+		currentT.close();
 		// currentT = new Projection(currentT, fields);
 	} // public void execute()
 
@@ -177,56 +196,56 @@ class Select implements Plan {
 	//
 	// } // public void execute()
 
-	class Union extends Iterator {
-		Iterator[] itrs;
-		int next;
-
-		public Union(Iterator[] itrs, int t) {
-			setSchema(itrs[0].getSchema());
-			this.itrs = itrs;
-			next = 0;
-		}
-
-		@Override
-		public void explain(int depth) {
-			System.out.println("Union : " + depth);
-			for (int i = 0; i < itrs.length; i++)
-				itrs[i].explain(depth + 1);
-		}
-
-		@Override
-		public void restart() {
-			if (next == itrs.length)
-				next--;
-			while (next >= 0)
-				itrs[next--].restart();
-			next = 0;
-		}
-
-		@Override
-		public boolean isOpen() {
-			return itrs[0].isOpen();
-		}
-
-		@Override
-		public void close() {
-			for (int i = 0; i < itrs.length; i++)
-				itrs[i].close();
-		}
-
-		@Override
-		public boolean hasNext() {
-			return next < itrs.length && itrs[next].hasNext();
-		}
-
-		@Override
-		public Tuple getNext() {
-			Tuple ret = itrs[next].getNext();
-			if (!itrs[next].hasNext()) {
-				itrs[next].restart();
-				next++;
-			}
-			return ret;
-		}
-	}
+	// class Union extends Iterator {
+	// Iterator[] itrs;
+	// int next;
+	//
+	// public Union(Iterator[] itrs, int t) {
+	// setSchema(itrs[0].getSchema());
+	// this.itrs = itrs;
+	// next = 0;
+	// }
+	//
+	// @Override
+	// public void explain(int depth) {
+	// System.out.println("Union : " + depth);
+	// for (int i = 0; i < itrs.length; i++)
+	// itrs[i].explain(depth + 1);
+	// }
+	//
+	// @Override
+	// public void restart() {
+	// if (next == itrs.length)
+	// next--;
+	// while (next >= 0)
+	// itrs[next--].restart();
+	// next = 0;
+	// }
+	//
+	// @Override
+	// public boolean isOpen() {
+	// return itrs[0].isOpen();
+	// }
+	//
+	// @Override
+	// public void close() {
+	// for (int i = 0; i < itrs.length; i++)
+	// itrs[i].close();
+	// }
+	//
+	// @Override
+	// public boolean hasNext() {
+	// return next < itrs.length && itrs[next].hasNext();
+	// }
+	//
+	// @Override
+	// public Tuple getNext() {
+	// Tuple ret = itrs[next].getNext();
+	// if (!itrs[next].hasNext()) {
+	// itrs[next].restart();
+	// next++;
+	// }
+	// return ret;
+	// }
+	// }
 } // class Select implements Plan

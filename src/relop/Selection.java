@@ -63,7 +63,6 @@ public class Selection extends Iterator {
 	public boolean hasNext() {
 		if (temp == null) {
 			while (iterator.hasNext()) {
-
 				Tuple t = iterator.getNext();
 				boolean all_good = true;
 				boolean satisfy;

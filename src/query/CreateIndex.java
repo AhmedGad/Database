@@ -38,6 +38,11 @@ class CreateIndex implements Plan {
 		QueryCheck.fileNotExists(fileName);
 		schema = Minibase.SystemCatalog.getSchema(ixTable);
 		QueryCheck.columnExists(schema, ixColumn);
+		IndexDesc[] arr = Minibase.SystemCatalog.getIndexes(ixTable);
+		for (int i = 0; i < arr.length; i++)
+			if (arr[i].columnName.endsWith(ixColumn))
+				throw new QueryException(
+						"This column already has an index,\nthere's no point of creating new one!!!");
 		// TODO check wether there exists an already created index
 	} // public CreateIndex(AST_CreateIndex tree) throws QueryException
 

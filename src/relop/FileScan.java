@@ -13,6 +13,7 @@ public class FileScan extends Iterator {
 	private HeapFile file;
 	private boolean open;
 	private RID last;
+	public static int count;
 
 	/**
 	 * Constructs a file scan, given the schema and heap file.
@@ -23,6 +24,7 @@ public class FileScan extends Iterator {
 		scanner = file.openScan();
 		open = true;
 		last = new RID();
+		count++;
 	}
 
 	/**
@@ -37,6 +39,7 @@ public class FileScan extends Iterator {
 	 * Restarts the iterator, i.e. as if it were just constructed.
 	 */
 	public void restart() {
+		count++;
 		close();
 		scanner = file.openScan();
 		open = true;
@@ -54,6 +57,7 @@ public class FileScan extends Iterator {
 	 */
 	public void close() {
 		if (isOpen()) {
+			count--;
 			scanner.close();
 			open = false;
 		}
@@ -82,7 +86,7 @@ public class FileScan extends Iterator {
 	/**
 	 * Gets the RID of the last tuple returned.
 	 */
-	public RID getLastRID() {// may cause problems
+	public RID getLastRID() {
 		return new RID(last);
 	}
 
