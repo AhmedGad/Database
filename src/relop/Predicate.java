@@ -10,179 +10,189 @@ import global.AttrType;
  */
 public class Predicate {
 
-  /** The operator. */
-  protected int oper;
+	/** The operator. */
+	protected int oper;
 
-  /** Type of left operand. */
-  protected int ltype;
+	/** Type of left operand. */
+	protected int ltype;
 
-  /** Left operand. */
-  protected Object left;
+	/** Left operand. */
+	protected Object left;
 
-  /** Type of right operand. */
-  protected int rtype;
+	/** Type of right operand. */
+	protected int rtype;
 
-  /** Right operand. */
-  protected Object right;
+	/** Right operand. */
+	protected Object right;
 
-  // --------------------------------------------------------------------------
+	// --------------------------------------------------------------------------
 
-  /**
-   * Constructs a predicate, given the expression.
-   * 
-   * @param oper AttrOperator constant
-   * @param ltype AttrType of the field
-   * @param left operand value, field number, or column name
-   * @param rtype AttrType of the field
-   * @param right operand value, field number, or column name
-   */
-  public Predicate(int oper, int ltype, Object left, int rtype, Object right) {
-    this.oper = oper;
-    this.ltype = ltype;
-    this.rtype = rtype;
-    this.left = left;
-    this.right = right;
-  }
+	/**
+	 * Constructs a predicate, given the expression.
+	 * 
+	 * @param oper
+	 *            AttrOperator constant
+	 * @param ltype
+	 *            AttrType of the field
+	 * @param left
+	 *            operand value, field number, or column name
+	 * @param rtype
+	 *            AttrType of the field
+	 * @param right
+	 *            operand value, field number, or column name
+	 */
+	public Predicate(int oper, int ltype, Object left, int rtype, Object right) {
+		this.oper = oper;
+		this.ltype = ltype;
+		this.rtype = rtype;
+		this.left = left;
+		this.right = right;
+	}
 
-  /**
-   * Validates AttrType.COLNAME operands against the given schema.
-   * 
-   * @return true if the predicate is valid, false otherwise
-   */
-  public boolean validate(Schema schema) {
+	public Predicate clone() {
+		return new Predicate(oper, ltype, left, rtype, right);
+	}
 
-    // if column name, make sure it exists
-    int type1 = ltype;
-    if (type1 == AttrType.COLNAME) {
-      int fldno = schema.fieldNumber((String) left);
-      if (fldno < 0) {
-        return false;
-      }
-      type1 = schema.fieldType(fldno);
-    }
-    int type2 = rtype;
-    if (type2 == AttrType.COLNAME) {
-      int fldno = schema.fieldNumber((String) right);
-      if (fldno < 0) {
-        return false;
-      }
-      type2 = schema.fieldType(fldno);
-    }
+	/**
+	 * Validates AttrType.COLNAME operands against the given schema.
+	 * 
+	 * @return true if the predicate is valid, false otherwise
+	 */
+	public boolean validate(Schema schema) {
 
-    // test left and right type compatibility
-    return (type1 == type2);
+		// if column name, make sure it exists
+		int type1 = ltype;
+		if (type1 == AttrType.COLNAME) {
+			int fldno = schema.fieldNumber((String) left);
+			if (fldno < 0) {
+				return false;
+			}
+			type1 = schema.fieldType(fldno);
+		}
+		int type2 = rtype;
+		if (type2 == AttrType.COLNAME) {
+			int fldno = schema.fieldNumber((String) right);
+			if (fldno < 0) {
+				return false;
+			}
+			type2 = schema.fieldType(fldno);
+		}
 
-  } // public boolean validate(Schema schema)
+		// test left and right type compatibility
+		return (type1 == type2);
 
-  /**
-   * Evaluates the predicate on the given tuple and returns true if it passes.
-   * 
-   * @throws IllegalStateException if member data lead to an invalid operation
-   */
-  public boolean evaluate(Tuple tuple) {
+	} // public boolean validate(Schema schema)
 
-    // if necessary, resolve column names to field numbers
-    if (ltype == AttrType.COLNAME) {
-      left = tuple.schema.fieldNumber((String) left);
-      ltype = AttrType.FIELDNO;
-    }
-    if (rtype == AttrType.COLNAME) {
-      right = tuple.schema.fieldNumber((String) right);
-      rtype = AttrType.FIELDNO;
-    }
+	/**
+	 * Evaluates the predicate on the given tuple and returns true if it passes.
+	 * 
+	 * @throws IllegalStateException
+	 *             if member data lead to an invalid operation
+	 */
+	public boolean evaluate(Tuple tuple) {
 
-    // get the values to compare
-    int type = ltype;
-    Object lval = left;
-    if (ltype == AttrType.FIELDNO) {
-      type = tuple.schema.fieldType((Integer) lval);
-      lval = tuple.getField((Integer) lval);
-    }
-    Object rval = right;
-    if (rtype == AttrType.FIELDNO) {
-      rval = tuple.getField((Integer) rval);
-    }
+		// if necessary, resolve column names to field numbers
+		if (ltype == AttrType.COLNAME) {
+			left = tuple.schema.fieldNumber((String) left);
+			ltype = AttrType.FIELDNO;
+		}
+		if (rtype == AttrType.COLNAME) {
+			right = tuple.schema.fieldNumber((String) right);
+			rtype = AttrType.FIELDNO;
+		}
 
-    // compare the values
-    int comp = 0;
-    switch (type) {
+		// get the values to compare
+		int type = ltype;
+		Object lval = left;
+		if (ltype == AttrType.FIELDNO) {
+			type = tuple.schema.fieldType((Integer) lval);
+			lval = tuple.getField((Integer) lval);
+		}
+		Object rval = right;
+		if (rtype == AttrType.FIELDNO) {
+			rval = tuple.getField((Integer) rval);
+		}
 
-      case AttrType.INTEGER:
-        comp = ((Integer) lval).compareTo((Integer) rval);
-        break;
+		// compare the values
+		int comp = 0;
+		switch (type) {
 
-      case AttrType.FLOAT:
-        comp = ((Float) lval).compareTo((Float) rval);
-        break;
+		case AttrType.INTEGER:
+			comp = ((Integer) lval).compareTo((Integer) rval);
+			break;
 
-      case AttrType.STRING:
-        comp = ((String) lval).compareTo((String) rval);
-        break;
+		case AttrType.FLOAT:
+			comp = ((Float) lval).compareTo((Float) rval);
+			break;
 
-      default:
-        throw new IllegalStateException("unknown types to compare");
+		case AttrType.STRING:
+			comp = ((String) lval).compareTo((String) rval);
+			break;
 
-    } // switch (type)
+		default:
+			throw new IllegalStateException("unknown types to compare");
 
-    // evaluate the operator
-    switch (oper) {
+		} // switch (type)
 
-      case AttrOperator.EQ:
-        return (comp == 0);
+		// evaluate the operator
+		switch (oper) {
 
-      case AttrOperator.NEQ:
-        return (comp != 0);
+		case AttrOperator.EQ:
+			return (comp == 0);
 
-      case AttrOperator.GT:
-        return (comp > 0);
+		case AttrOperator.NEQ:
+			return (comp != 0);
 
-      case AttrOperator.GTE:
-        return (comp >= 0);
+		case AttrOperator.GT:
+			return (comp > 0);
 
-      case AttrOperator.LT:
-        return (comp < 0);
+		case AttrOperator.GTE:
+			return (comp >= 0);
 
-      case AttrOperator.LTE:
-        return (comp <= 0);
+		case AttrOperator.LT:
+			return (comp < 0);
 
-      default:
-        throw new IllegalStateException("unknown operator to evaluate");
+		case AttrOperator.LTE:
+			return (comp <= 0);
 
-    } // switch (oper)
+		default:
+			throw new IllegalStateException("unknown operator to evaluate");
 
-  } // public boolean evaluate(Tuple tuple)
+		} // switch (oper)
 
-  /**
-   * Returns a string representation of the Predicate.
-   */
-  public String toString() {
+	} // public boolean evaluate(Tuple tuple)
 
-    return opString(ltype, left) + ' ' + AttrOperator.toString(oper) + ' '
-        + opString(rtype, right);
+	/**
+	 * Returns a string representation of the Predicate.
+	 */
+	public String toString() {
 
-  } // public String toString()
+		return opString(ltype, left) + ' ' + AttrOperator.toString(oper) + ' '
+				+ opString(rtype, right);
 
-  /**
-   * Returns a string representation of an operand.
-   */
-  protected String opString(int type, Object operand) {
+	} // public String toString()
 
-    // get the string version
-    String str = operand.toString();
+	/**
+	 * Returns a string representation of an operand.
+	 */
+	protected String opString(int type, Object operand) {
 
-    // wrap strings in single quotes
-    if (type == AttrType.STRING) {
-      return "'" + str + "'";
-    }
+		// get the string version
+		String str = operand.toString();
 
-    // wrap column numbers in braces
-    if (type == AttrType.FIELDNO) {
-      return "{" + str + "}";
-    }
+		// wrap strings in single quotes
+		if (type == AttrType.STRING) {
+			return "'" + str + "'";
+		}
 
-    // otherwise, just return the string
-    return str;
+		// wrap column numbers in braces
+		if (type == AttrType.FIELDNO) {
+			return "{" + str + "}";
+		}
 
-  } // protected String opString(int type, Object obj)
+		// otherwise, just return the string
+		return str;
+
+	} // protected String opString(int type, Object obj)
 
 } // public class Predicate

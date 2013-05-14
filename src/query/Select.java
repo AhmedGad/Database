@@ -10,8 +10,10 @@ import parser.AST_Select;
 import relop.FileScan;
 import relop.Iterator;
 import relop.Predicate;
+import relop.Projection;
 import relop.Schema;
 import relop.Selection;
+import relop.SimpleJoin;
 import relop.Tuple;
 
 /**
@@ -23,6 +25,7 @@ class Select implements Plan {
 	SortKey[] orders;
 	Predicate[][] preds;
 	Iterator[] tablesIters;
+	boolean[] visited;
 
 	/**
 	 * Optimizes the plan, given the parsed query.
@@ -36,7 +39,7 @@ class Select implements Plan {
 		preds = tree.getPredicates();
 		tables = tree.getTables();
 		tablesIters = new Iterator[tables.length];
-
+		visited = new boolean[preds.length];
 		// initialize iterators
 		for (int i = 0; i < tablesIters.length; i++) {
 			tablesIters[i] = new FileScan(
@@ -46,29 +49,15 @@ class Select implements Plan {
 
 	} // public Select(AST_Select tree) throws QueryException
 
-	public void push() {
-
-		for (int i = 0; i < preds.length; i++) {
-			for (int j = 0; j < tables.length; j++) {
-				Schema s = Minibase.SystemCatalog.getSchema(tables[i]);
-				boolean match = true;
-				for (int k = 0; k < preds[i].length && match; k++)
-					match &= preds[i][k].validate(s);
-				if (match) {
-					// put selection p(table[i]) in the iterators array instead
-					// of table[i]
-				}
-			}
-		}
-	}
-
 	/**
 	 * Executes the plan and prints applicable output.
 	 */
 	public void execute() {
 		@SuppressWarnings("unchecked")
 		ArrayList<Predicate[]>[] CNF_s = new ArrayList[tables.length];
-
+		for (int i = 0; i < preds.length; i++)
+			for (int j = 0; j < preds[i].length; j++)
+				preds[i][j] = preds[i][j].clone();
 		for (int t = 0; t < tables.length; t++) {
 			CNF_s[t] = new ArrayList<Predicate[]>();
 
@@ -80,8 +69,10 @@ class Select implements Plan {
 					if (!ok)
 						break;
 				}
-				if (ok)
+				if (ok) {
+					visited[i] = true;
 					CNF_s[t].add(preds[i]);
+				}
 			}
 
 		}
@@ -96,7 +87,41 @@ class Select implements Plan {
 
 				tablesIters[t] = new Selection(tablesIters[t], cur_pred);
 			}
-
+		// start doing left deep joins, note further optimizations could be done
+		// by reordering the array tableIters according to some criteria
+		Schema current = tablesIters[0].getSchema();
+		Iterator currentT = tablesIters[0];
+		for (int i = 1; i < tablesIters.length; i++) {
+			Schema next = Schema.join(current, tablesIters[i].getSchema());
+			ArrayList<Predicate[]> match = new ArrayList<Predicate[]>();
+			for (int j = 0; j < preds.length; j++) {
+				if (!visited[j]) {// check wether we can push this current
+									// predicate to the join of those 2 tables
+					boolean matched = true;
+					for (Predicate p : preds[j])
+						matched &= p.validate(next);
+					if (matched) {
+						match.add(preds[j]);
+						visited[j] = true;
+					}
+				}
+			}
+			Predicate[][] joinPreds = new Predicate[match.size()][];
+			for (int j = 0; j < joinPreds.length; j++)
+				joinPreds[j] = match.get(j);
+			current = next;
+			currentT = new SimpleJoin(currentT, tablesIters[i], joinPreds);
+		}
+		// if not select *
+		if (cols.length > 0) {
+			// Do the projection
+			Integer[] fields = new Integer[cols.length];
+			for (int i = 0; i < cols.length; i++)
+				fields[i] = current.fieldNumber(cols[i]);
+			currentT = new Projection(currentT, fields);
+		}
+		currentT.execute();// print out the result;
+		// currentT = new Projection(currentT, fields);
 	} // public void execute()
 
 	// /**

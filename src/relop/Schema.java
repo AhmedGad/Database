@@ -26,6 +26,16 @@ public class Schema {
 	protected String[] names;
 
 	// --------------------------------------------------------------------------
+	public Schema clone() {
+		Schema ret = new Schema(names.length);
+		for (int i = 0; i < names.length; i++) {
+			ret.types[i] = types[i];
+			ret.lengths[i] = lengths[i];
+			ret.offsets[i] = offsets[i];
+			ret.names[i] = names[i];
+		}
+		return ret;
+	}
 
 	/**
 	 * Constructs a schema for the given number of fields.

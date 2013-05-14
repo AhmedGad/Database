@@ -63,12 +63,13 @@ public class Selection extends Iterator {
 	public boolean hasNext() {
 		if (temp == null) {
 			while (iterator.hasNext()) {
+
 				Tuple t = iterator.getNext();
 				boolean all_good = true;
 				boolean satisfy;
 				for (int i = 0; i < CNF.length; i++) {
 					satisfy = false;
-					for (int j = 0; j < CNF[i].length; j++) 
+					for (int j = 0; j < CNF[i].length; j++)
 						satisfy = satisfy || CNF[i][j].evaluate(t);
 					all_good = all_good && satisfy;
 				}
